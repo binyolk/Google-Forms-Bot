@@ -8,7 +8,7 @@
  
  Note 3: Follows human (or bot) trends via results sheet. 
     
-    Note 3a: You will need to make the results sheet viewable to all.
+ - Note 3a: You will need to make the results sheet viewable to all.
 
 # HOW TO USE
  Pip install all required libraries (re, requests, demjson3, sys, random, pandas)
