@@ -1,43 +1,28 @@
-import scrape
-import requests
-import random
-import sys
+import scrape, requests, sys, sheet
 
-if len(sys.argv) < 4:
-    print("Usage: python3 main.py <formUrl> <numResponses> <typedResponseOutcomesList>")
+if len(sys.argv) < 5:
+    print("Usage: python3 main.py <formUrl> <numResponses> <sheetID> <sheetName>")
+    print("Example: python3 main.py https://docs.google.com/forms/d/e/.../viewform 10 '1abcD2EfGhIJ3klMN4opQR5stUV' 'Form responses 1'")
     sys.exit(1)
 
 url = sys.argv[1].replace('viewform', 'formResponse')        
-numResponses = int(sys.argv[2]) 
-typedResponseOutcomes = sys.argv[3].split(",") if sys.argv[3] else []
+numResponses = int(sys.argv[2])
+sheetID = sys.argv[3]
+sheetName = sys.argv[4] if sys.argv[4] else "Form responses 1"
+
+sheet.updateCSV(sheetID, sheetName)
 
 fields = scrape.scrapeFields(url)
-payload = {}
+weights = sheet.buildWeightedDistributions("data.csv")
 
 for _ in range(numResponses):
+    payload = {}
     for fid, data in fields.items():
-        if data['options']:
-            if data['type'] == 'checkbox':
-                noSelections = random.randint(1, len(data['options']))
-                selections = set()
-
-                for i in range(noSelections):
-                    selections.add(random.choice(data['options']))
-                payload[fid] = selections
-                continue
-
-            payload[fid] = random.choice(data['options'])
-
+        q = data['question']
+        if data['type'] == 'checkbox':
+            payload[fid] = sheet.sampleMultiAnswer(q, weights)
+        elif data['options']:
+            payload[fid] = sheet.sampleAnswer(q, weights)
         else:
-            if len(typedResponseOutcomes) > 1:
-                noOutcomes = random.randint(1, len(typedResponseOutcomes))
-                outcomes = set()
-
-                for i in range(noOutcomes):
-                    outcomes.add(random.choice(typedResponseOutcomes))
-                payload[fid] = outcomes
-                continue
-
-            payload[fid] = "" if not data['required'] else typedResponseOutcomes[0]
-
+            payload[fid] = sheet.sampleAnswer(q, weights) or ""
     requests.post(url, data=payload)

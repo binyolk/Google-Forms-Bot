@@ -1,6 +1,4 @@
-import re
-import requests
-import demjson3
+import re, requests, demjson3
 
 def scrapeFields(formUrl):
     res = requests.get(formUrl)
